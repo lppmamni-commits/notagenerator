@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator Nota Hibah DIKTI - Mergane Males Gawe Wkwkwkwk</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- jsPDF & html2canvas for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Supabase Client for Database -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Style for the hidden PDF template to ensure accurate rendering */
+        #pdf-template {
+            display: none; /* Hidden by default */
+            position: absolute;
+            left: -9999px; /* Move off-screen */
+            width: 210mm; /* A4 width */
+            min-height: 297mm; /* A4 height */
+            background: white;
+            font-family: 'Helvetica', sans-serif;
+            color: black;
+            padding: 1cm;
+        }
+        /* Added for smooth transition on rekap section */
+        #rekapSection {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out;
+        }
+        /* Styling for edit mode */
+        .edit-mode-indicator {
+            border-color: #f59e0b !important; /* amber-500 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Generator Nota Hibah DIKTI</h1>
+                <p class="text-gray-500 mt-2">Nota Gen V2.1 - Male Gawe , lek wkwkwkwk</p>
+            </div>
+
+            <!-- NEW: Edit Mode Status -->
+            <div id="editModeStatus" class="hidden mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-md">
+                <p class="font-bold">Mode Edit</p>
+                <p>Anda sedang memperbarui data transaksi. Klik "Update Data" untuk menyimpan atau "Batal Edit" untuk membatalkan.</p>
+            </div>
+
+            <form id="notaForm">
+                <input type="hidden" id="editModeId" value="">
+                
+                <!-- SECTION HEADER & LOGO -->
+                <fieldset id="infoInstitusiFieldset" class="border-2 border-blue-800 rounded-lg p-6 mb-8 transition-colors duration-300">
+                    <legend class="text-lg font-semibold text-blue-800 px-2">Informasi Institusi & Logo</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex flex-col items-center">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Logo DIKTI</label>
+                            <img id="preview_dikti" src="https://placehold.co/96x96/e0e0e0/757575?text=Logo+DIKTI" alt="Logo DIKTI" class="h-24 w-24 object-contain mb-2 border rounded-md p-1">
+                            <input type="file" id="logo_dikti" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Logo Perguruan Tinggi</label>
+                            <img id="preview_kampus" src="https://placehold.co/96x96/e0e0e0/757575?text=Logo+Kampus" alt="Logo Kampus" class="h-24 w-24 object-contain mb-2 border rounded-md p-1">
+                            <input type="file" id="logo_kampus" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label for="nama_kampus" class="block text-sm font-medium text-gray-700">Nama Perguruan Tinggi</label>
+                            <input type="text" id="nama_kampus" name="nama_kampus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Contoh: Universitas Gadjah Mada" required>
+                        </div>
+                         <div>
+                            <label for="telepon_email" class="block text-sm font-medium text-gray-700">Telepon/Email Institusi</label>
+                            <input type="text" id="telepon_email" name="telepon_email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0274-588688 / info@ugm.ac.id" required>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="alamat_kampus" class="block text-sm font-medium text-gray-700">Alamat Lengkap Kampus</label>
+                            <textarea id="alamat_kampus" name="alamat_kampus" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Bulaksumur, Caturtunggal, Depok, Sleman, Yogyakarta" required></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                        <button type="button" id="simpanInfoInstitusi" class="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">Simpan Info Permanen</button>
+                        <button type="button" id="hapusInfoInstitusi" class="w-full sm:w-auto bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400">Hapus Info Tersimpan</button>
+                    </div>
+                </fieldset>
+
+                <!-- SECTION INFORMASI TRANSAKSI -->
+                <fieldset id="infoTransaksiFieldset" class="border-2 border-blue-800 rounded-lg p-6 mb-8 transition-colors duration-300">
+                    <legend class="text-lg font-semibold text-blue-800 px-2">Informasi Transaksi</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div>
+                            <label for="nomor_kuitansi" class="block text-sm font-medium text-gray-700">Nomor Kuitansi</label>
+                            <input type="text" id="nomor_kuitansi" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="tanggal_transaksi" class="block text-sm font-medium text-gray-700">Tanggal Transaksi</label>
+                            <input type="date" id="tanggal_transaksi" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="kota_penerbitan" class="block text-sm font-medium text-gray-700">Kota Penerbitan</label>
+                            <input type="text" id="kota_penerbitan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Yogyakarta" required>
+                        </div>
+                         <div class="lg:col-span-2">
+                            <label for="diterima_dari" class="block text-sm font-medium text-gray-700">Diterima dari</label>
+                            <input type="text" id="diterima_dari" value="Direktorat Riset, Teknologi, dan Pengabdian kepada Masyarakat (DRTPM)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="jenis_pembelanjaan" class="block text-sm font-medium text-gray-700">Jenis Pembelanjaan</label>
+                            <select id="jenis_pembelanjaan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                                <option value="Peralatan">Peralatan</option>
+                                <option value="Bahan Habis Pakai">Bahan Habis Pakai</option>
+                                <option value="Perjalanan Dinas">Perjalanan Dinas</option>
+                                <option value="Honorarium">Honorarium</option>
+                                <option value="Buku">Buku</option>
+                                <option value="Jasa">Jasa</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- SECTION RINCIAN BARANG/JASA -->
+                <fieldset id="infoRincianFieldset" class="border-2 border-blue-800 rounded-lg p-6 mb-8 transition-colors duration-300">
+                    <legend class="text-lg font-semibold text-blue-800 px-2">Rincian Barang/Jasa</legend>
+                    <div class="overflow-x-auto">
+                        <table id="rincianTabel" class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">Nama Barang/Jasa</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Kuantitas</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Harga Satuan (Rp)</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">Total (Rp)</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rincianTabelBody" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" id="tambahBaris" class="mt-4 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                        Tambah Baris
+                    </button>
+                    <div class="mt-6 flex justify-end">
+                        <div class="w-full max-w-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-gray-700">Subtotal</span>
+                                <span id="subtotal" class="text-sm font-semibold text-gray-900">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <div class="flex items-center">
+                                     <input id="ppn_checkbox" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                     <label for="ppn_checkbox" class="ml-2 text-sm font-medium text-gray-700">PPN</label>
+                                     <input type="number" id="ppn_persen" value="11" class="ml-2 w-16 text-sm rounded-md border-gray-300 shadow-sm" disabled>
+                                     <span class="ml-1 text-sm font-medium text-gray-700">%</span>
+                                </div>
+                                <span id="ppn_total" class="text-sm font-semibold text-gray-900">Rp 0</span>
+                            </div>
+                            <!-- PPH Section - Start -->
+                            <div id="pph_section" class="hidden flex justify-between items-center mb-2">
+                                <span class="text-sm font-medium text-gray-700">PPH (5%)</span>
+                                <span id="pph_total" class="text-sm font-semibold text-gray-900">Rp 0</span>
+                            </div>
+                            <!-- PPH Section - End -->
+                            <hr class="my-2">
+                            <div class="flex justify-between items-center font-bold text-lg">
+                                <span class="text-gray-800">Total Akhir</span>
+                                <span id="total_akhir" class="text-blue-800">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                
+                <!-- SECTION TERBILANG & PENANGGUNG JAWAB -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <fieldset id="infoTerbilangFieldset" class="border-2 border-blue-800 rounded-lg p-6 transition-colors duration-300">
+                        <legend class="text-lg font-semibold text-blue-800 px-2">Terbilang</legend>
+                        <div id="terbilang_display" class="bg-gray-100 p-4 rounded-md text-gray-800 italic min-h-[50px] flex items-center">Nol rupiah</div>
+                     </fieldset>
+                     
+                     <fieldset id="infoPjFieldset" class="border-2 border-blue-800 rounded-lg p-6 transition-colors duration-300">
+                        <legend class="text-lg font-semibold text-blue-800 px-2">Penanggung Jawab</legend>
+                        <div class="space-y-4">
+                            <div>
+                                <label for="penandatangan_nama" class="block text-sm font-medium text-gray-700">Nama Penandatangan</label>
+                                <input type="text" id="penandatangan_nama" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Dr. John Doe" required>
+                            </div>
+                            <div>
+                                <label for="penandatangan_nip" class="block text-sm font-medium text-gray-700">NIP/NIDN</label>
+                                <input type="text" id="penandatangan_nip" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="198001012005011001" required>
+                            </div>
+                             <div>
+                                <label for="penandatangan_jabatan" class="block text-sm font-medium text-gray-700">Jabatan</label>
+                                <input type="text" id="penandatangan_jabatan" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Ketua Peneliti" required>
+                            </div>
+                        </div>
+                     </fieldset>
+                </div>
+
+                <!-- TOMBOL AKSI -->
+                <div class="mt-10 flex flex-col sm:flex-row justify-end items-center gap-4">
+                    <div id="loadingIndicator" class="hidden items-center">
+                        <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        <span class="text-gray-600">Memproses...</span>
+                    </div>
+                    <button type="button" id="batalEditBtn" class="w-full sm:w-auto bg-gray-500 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors hidden">
+                        Batal Edit
+                    </button>
+                    <button type="button" id="simpanBtn" class="w-full sm:w-auto bg-blue-800 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-colors">
+                        Simpan Data
+                    </button>
+                    <button type="button" id="updateBtn" class="w-full sm:w-auto bg-yellow-500 text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-colors hidden">
+                        Update Data
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- REKAP ONLINE SECTION -->
+        <div class="mt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+             <button type="button" id="lihatRekap" class="w-full sm:w-auto bg-gray-800 text-white font-bold py-3 px-8 rounded-lg shadow hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-400 transition-colors">
+                Tampilkan/Sembunyikan Rekapitulasi & Opsi Unduh
+            </button>
+        </div>
+        <div id="rekapSection" class="mt-4 bg-white rounded-lg shadow-lg p-6 md:p-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">Rekapitulasi Transaksi</h2>
+                <button type="button" id="downloadRekap" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-400 transition-colors text-sm">
+                    Download Rekap (CSV)
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. Kuitansi</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis Pembelanjaan</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Nominal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Penandatangan</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rekapTabelBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Data will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Hidden Template for PDF Generation -->
+    <div id="pdf-template">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 3px solid black; padding-bottom: 1rem;">
+            <img id="pdf-logo-dikti" style="height: 2.5cm; width: 2.5cm; object-fit: contain;">
+            <div style="text-align: center;">
+                <p style="font-weight: bold; font-size: 10pt; margin: 0;">KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI</p>
+                <p id="pdf-nama-kampus" style="font-weight: bold; font-size: 12pt; margin: 2px 0;"></p>
+                <p id="pdf-alamat-kampus" style="font-size: 8pt; margin: 0;"></p>
+                <p id="pdf-telepon-email" style="font-size: 8pt; margin: 0;"></p>
+            </div>
+            <img id="pdf-logo-kampus" style="height: 2.5cm; width: 2.5cm; object-fit: contain;">
+        </div>
+        
+        <!-- Judul -->
+        <div style="text-align: center; margin: 2rem 0;">
+            <p style="font-size: 16pt; font-weight: bold; text-decoration: underline; margin: 0;">KUITANSI</p>
+            <p id="pdf-nomor-kuitansi" style="font-size: 10pt; margin: 4px 0;"></p>
+        </div>
+
+        <!-- Info -->
+        <table style="width: 100%; font-size: 10pt; margin-bottom: 1rem; border-collapse: collapse;">
+            <tbody>
+                <tr>
+                    <td style="width: 25%; vertical-align: top; padding: 4px 0;">Sudah terima dari</td>
+                    <td style="width: 2%; vertical-align: top; padding: 4px 0;">:</td>
+                    <td id="pdf-diterima-dari" style="font-weight: bold; padding: 4px 0;"></td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top; padding: 4px 0;">Uang sejumlah</td>
+                    <td style="vertical-align: top; padding: 4px 0;">:</td>
+                    <td id="pdf-terbilang" style="font-style: italic; padding: 8px; background-color: #f3f4f6; border: 1px solid #d1d5db;"></td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top; padding: 4px 0;">Untuk pembayaran</td>
+                    <td style="vertical-align: top; padding: 4px 0;">:</td>
+                    <td id="pdf-jenis-pembelanjaan" style="padding: 4px 0;"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Rincian -->
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid black; font-size: 10pt; margin-bottom: 1rem;">
+            <thead>
+                <tr style="background-color: #f3f4f6; font-weight: bold;">
+                    <td style="border: 1px solid black; padding: 6px; width: 40%;">Nama Barang/Jasa</td>
+                    <td style="border: 1px solid black; padding: 6px; text-align: center;">Kuantitas</td>
+                    <td style="border: 1px solid black; padding: 6px; text-align: right;">Harga Satuan</td>
+                    <td style="border: 1px solid black; padding: 6px; text-align: right;">Jumlah Harga</td>
+                </tr>
+            </thead>
+            <tbody id="pdf-rincian-body"></tbody>
+            <tfoot>
+                <tr><td colspan="3" class="border border-black p-2 text-right font-bold">Subtotal</td><td id="pdf-subtotal" class="border border-black p-2 text-right font-bold"></td></tr>
+                <tr id="pdf-ppn-row" class="hidden"><td colspan="3" id="pdf-ppn-label" class="border border-black p-2 text-right font-bold"></td><td id="pdf-ppn-total" class="border border-black p-2 text-right font-bold"></td></tr>
+                <tr id="pdf-pph-row" style="display:none;"><td colspan="3" style="border: 1px solid black; padding: 6px; text-align: right; font-weight: bold;">PPH (5%)</td><td id="pdf-pph-total" style="border: 1px solid black; padding: 6px; text-align: right; font-weight: bold;"></td></tr>
+            </tfoot>
+        </table>
+        
+        <!-- Footer -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 2rem; font-size: 10pt;">
+            <div style="width: 45%; padding: 8px; text-align: center; font-weight: bold; font-size: 14pt; background-color: #e5e7eb; border: 2px solid black;">
+                TOTAL : <span id="pdf-total-akhir"></span>
+            </div>
+            <div style="width: 45%; text-align: center;">
+                <p><span id="pdf-kota-penerbitan"></span>, <span id="pdf-tanggal-transaksi"></span></p>
+                <p id="pdf-penandatangan-jabatan"></p>
+                <div style="height: 5rem;"></div> <!-- Spasi untuk TTD -->
+                <p style="font-weight: bold; text-decoration: underline; margin:0;" id="pdf-penandatangan-nama"></p>
+                <p style="margin:0;">NIP/NIDN. <span id="pdf-penandatangan-nip"></span></p>
+            </div>
+        </div>
+    </div>
+
+
+<script>
+// Master try-catch untuk mencegah seluruh skrip gagal jika ada error tak terduga
+try {
+document.addEventListener('DOMContentLoaded', function () {
+    /*
+    ================================================================================================
+    PENTING: PETUNJUK SETUP SUPABASE
+    ================================================================================================
+    1. Buat akun dan proyek baru di https://supabase.com.
+    2. Di dalam proyek Anda, pergi ke 'SQL Editor'.
+    3. Jalankan query SQL yang ada di file 'supabase_setup_guide.md' untuk membuat tabel 'transactions'.
+    4. Setelah tabel dibuat, pergi ke 'Authentication' -> 'Policies' untuk mengatur kebijakan akses.
+    5. Terakhir, pergi ke 'Project Settings' -> 'API' untuk mendapatkan URL dan 'anon' KEY Anda.
+    6. Ganti placeholder di bawah dengan URL dan KEY Anda.
+    ================================================================================================
+    */
+
+    // --- LIBRARY & SUPABASE CHECK ---
+    if (typeof supabase === 'undefined' || typeof jspdf === 'undefined' || typeof html2canvas === 'undefined') {
+        alert("Peringatan: Salah satu library (Supabase, jsPDF, html2canvas) gagal dimuat. Beberapa fitur mungkin tidak berfungsi. Coba segarkan halaman dan periksa koneksi internet Anda.");
+        return;
+    }
+
+    // --- SUPABASE & GLOBAL VARIABLES ---
+    const SUPABASE_URL = 'https://wtiovcjlovbqskggvcqw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0aW92Y2psb3ZicXNrZ2d2Y3F3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNDMxMjAsImV4cCI6MjA3NDgxOTEyMH0.C6ohU_RVfqhxADmnp00F47ehde5t_J9R57RoaUzLQ2I';
+
+    let supabaseClient = null;
+    const { createClient } = supabase;
+    
+    if (!SUPABASE_URL.includes('supabase.co') || !SUPABASE_KEY.startsWith('ey')) {
+         alert('Kesalahan Konfigurasi: SUPABASE_URL atau SUPABASE_KEY tampaknya belum diatur dengan benar di dalam kode. Silakan ikuti petunjuk setup.');
+    } else {
+        try {
+            supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log("Koneksi ke Supabase berhasil diinisialisasi.");
+        } catch (error) {
+            console.error('Supabase connection error:', error);
+            alert('Koneksi ke Supabase gagal. Periksa kembali URL dan Key Anda di dalam kode.');
+        }
+    }
+
+    const { jsPDF } = window.jspdf;
+    
+    // --- DOM ELEMENTS ---
+    const getEl = (id) => document.getElementById(id);
+    const notaForm = getEl('notaForm');
+    const downloadRekapBtn = getEl('downloadRekap');
+    const lihatRekapBtn = getEl('lihatRekap');
+    const rekapSection = getEl('rekapSection');
+    const rekapTabelBody = getEl('rekapTabelBody');
+    const loadingIndicator = getEl('loadingIndicator');
+    const tambahBarisBtn = getEl('tambahBaris');
+    const rincianTabelBody = getEl('rincianTabelBody');
+    const ppnCheckbox = getEl('ppn_checkbox');
+    const ppnPersenInput = getEl('ppn_persen');
+    const pphSection = getEl('pph_section');
+    const jenisPembelanjaanSelect = getEl('jenis_pembelanjaan');
+    const simpanBtn = getEl('simpanBtn');
+    const updateBtn = getEl('updateBtn');
+    const batalEditBtn = getEl('batalEditBtn');
+    const editModeIdInput = getEl('editModeId');
+    const editModeStatus = getEl('editModeStatus');
+    const simpanInfoInstitusiBtn = getEl('simpanInfoInstitusi');
+    const hapusInfoInstitusiBtn = getEl('hapusInfoInstitusi');
+    const allFieldsets = document.querySelectorAll('#notaForm fieldset');
+
+    // --- HELPER FUNCTIONS (Format & Konversi) ---
+    const formatRupiah = (angka, prefix = '') => {
+        if(angka === null || isNaN(angka)) angka = 0;
+        let number_string = String(angka).replace(/[^,\d]/g, '');
+        let split = number_string.split(',');
+        let sisa = split[0].length % 3;
+        let rupiah = split[0].substr(0, sisa);
+        let ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+        if (ribuan) {
+            let separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+        rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+        return prefix + (rupiah || '0');
+    };
+
+    const parseRupiah = (rupiahString) => parseFloat(String(rupiahString).replace(/Rp\s?|\./g, '').replace(',', '.')) || 0;
+    
+    const terbilang = (n) => {
+        const angka = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+        if (n < 12) return angka[n];
+        if (n < 20) return terbilang(n - 10) + " belas";
+        if (n < 100) return terbilang(Math.floor(n / 10)) + " puluh " + terbilang(n % 10);
+        if (n < 200) return "seratus " + terbilang(n - 100);
+        if (n < 1000) return terbilang(Math.floor(n / 100)) + " ratus " + terbilang(n % 100);
+        if (n < 2000) return "seribu " + terbilang(n - 1000);
+        if (n < 1000000) return terbilang(Math.floor(n / 1000)) + " ribu " + terbilang(n % 1000);
+        if (n < 1000000000) return terbilang(Math.floor(n / 1000000)) + " juta " + terbilang(n % 1000000);
+        return ""; // Simplified for brevity
+    };
+
+    const angkaKeTerbilang = (angka) => {
+        if (angka === 0) return "Nol rupiah";
+        let hasil = terbilang(angka).replace(/\s+/g, ' ').trim();
+        return hasil.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') + " rupiah";
+    };
+
+    const resetForm = () => {
+        notaForm.reset();
+        muatInfoInstitusi(); 
+        rincianTabelBody.innerHTML = '';
+        addRow();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const timestampLastSix = String(Date.now()).slice(-6);
+        getEl('nomor_kuitansi').value = `INV/${year}/${month}${day}/${timestampLastSix}`;
+        getEl('tanggal_transaksi').valueAsDate = new Date();
+        getEl('diterima_dari').value = "Direktorat Riset, Teknologi, dan Pengabdian kepada Masyarakat (DRTPM)";
+        updateTotals();
+    };
+    
+    const enterEditMode = () => {
+        editModeStatus.classList.remove('hidden');
+        simpanBtn.classList.add('hidden');
+        updateBtn.classList.remove('hidden');
+        batalEditBtn.classList.remove('hidden');
+        allFieldsets.forEach(fs => fs.classList.add('edit-mode-indicator'));
+        notaForm.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const exitEditMode = () => {
+        editModeIdInput.value = '';
+        editModeStatus.classList.add('hidden');
+        simpanBtn.classList.remove('hidden');
+        updateBtn.classList.add('hidden');
+        batalEditBtn.classList.add('hidden');
+        allFieldsets.forEach(fs => fs.classList.remove('edit-mode-indicator'));
+        resetForm();
+    };
+
+    // --- INSTITUTION INFO PERSISTENCE ---
+    const simpanInfoInstitusi = () => {
+        try {
+            localStorage.setItem('institusi_nama_kampus', getEl('nama_kampus').value);
+            localStorage.setItem('institusi_alamat_kampus', getEl('alamat_kampus').value);
+            localStorage.setItem('institusi_telepon_email', getEl('telepon_email').value);
+            
+            const saveLogo = (inputId, key, previewId) => {
+                const fileInput = getEl(inputId);
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    // Batas ukuran file 500KB untuk mencegah error kuota localStorage
+                    const maxSizeInBytes = 500 * 1024; // 500 KB
+
+                    if (file.size > maxSizeInBytes) {
+                        alert(`Ukuran file logo terlalu besar (maksimal 500KB). Silakan pilih gambar yang lebih kecil.`);
+                        fileInput.value = ""; // Hapus file yang dipilih jika terlalu besar
+                        return; // Hentikan proses untuk logo ini
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            localStorage.setItem(key, e.target.result);
+                            getEl(previewId).src = e.target.result;
+                        } catch (err) {
+                             if (err.name === 'QuotaExceededError') {
+                                alert(`Gagal menyimpan logo: Penyimpanan browser penuh. Coba gunakan gambar dengan resolusi lebih kecil atau hapus data lain.`);
+                            } else {
+                                console.error("Gagal menyimpan logo:", err);
+                                alert('Terjadi kesalahan yang tidak diketahui saat menyimpan logo.');
+                            }
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            saveLogo('logo_dikti', 'institusi_logo_dikti', 'preview_dikti');
+            saveLogo('logo_kampus', 'institusi_logo_kampus', 'preview_kampus');
+            
+            alert('Info institusi (teks) berhasil disimpan. Logo akan disimpan jika ukurannya sesuai.');
+
+        } catch (e) {
+            console.error("Gagal menyimpan info institusi:", e);
+            alert("Gagal menyimpan info. Mungkin penyimpanan browser Anda penuh.");
+        }
+    };
+    
+    const muatInfoInstitusi = () => {
+        getEl('nama_kampus').value = localStorage.getItem('institusi_nama_kampus') || '';
+        getEl('alamat_kampus').value = localStorage.getItem('institusi_alamat_kampus') || '';
+        getEl('telepon_email').value = localStorage.getItem('institusi_telepon_email') || '';
+
+        const logoDikti = localStorage.getItem('institusi_logo_dikti');
+        if(logoDikti) getEl('preview_dikti').src = logoDikti;
+
+        const logoKampus = localStorage.getItem('institusi_logo_kampus');
+        if(logoKampus) getEl('preview_kampus').src = logoKampus;
+    };
+
+    const hapusInfoInstitusi = () => {
+        if(confirm('Anda yakin ingin menghapus semua info institusi yang tersimpan?')) {
+            localStorage.removeItem('institusi_nama_kampus');
+            localStorage.removeItem('institusi_alamat_kampus');
+            localStorage.removeItem('institusi_telepon_email');
+            localStorage.removeItem('institusi_logo_dikti');
+            localStorage.removeItem('institusi_logo_kampus');
+            location.reload();
+        }
+    };
+
+    // --- CORE LOGIC (Calculations & Table) ---
+    const updateTotals = () => {
+        let subtotal = 0;
+        rincianTabelBody.querySelectorAll('tr').forEach(row => {
+            const totalCell = row.querySelector('.total-harga');
+            subtotal += parseRupiah(totalCell.value);
+        });
+        getEl('subtotal').textContent = formatRupiah(subtotal, 'Rp ');
+
+        let ppnTotal = 0;
+        if (ppnCheckbox.checked) {
+            const persen = parseFloat(ppnPersenInput.value) || 0;
+            ppnTotal = subtotal * (persen / 100);
+        }
+        getEl('ppn_total').textContent = formatRupiah(ppnTotal, 'Rp ');
+
+        // PPH Calculation
+        let pphTotal = 0;
+        if (jenisPembelanjaanSelect.value === 'Honorarium') {
+            pphTotal = subtotal * 0.05; // 5% of subtotal
+        }
+        getEl('pph_total').textContent = `(${formatRupiah(pphTotal, 'Rp ')})`; // Show as deduction
+
+        const totalAkhir = subtotal + ppnTotal - pphTotal; // PPH is a deduction
+        getEl('total_akhir').textContent = formatRupiah(totalAkhir, 'Rp ');
+        getEl('terbilang_display').textContent = angkaKeTerbilang(Math.floor(totalAkhir));
+    };
+
+    const attachRowListeners = (row) => {
+        const calculateRowTotal = () => {
+            const qty = parseInt(row.querySelector('.qty').value) || 0;
+            const harga = parseRupiah(row.querySelector('.harga-satuan').value);
+            row.querySelector('.total-harga').value = formatRupiah(qty * harga, 'Rp ');
+            updateTotals();
+        };
+        row.querySelector('.harga-satuan').addEventListener('keyup', function() {
+            this.value = formatRupiah(this.value);
+            calculateRowTotal();
+        });
+        row.querySelector('.qty').addEventListener('input', calculateRowTotal);
+        row.querySelector('.hapus-baris').addEventListener('click', () => {
+            if (rincianTabelBody.rows.length > 1) {
+                row.remove();
+                updateTotals();
+            } else {
+                alert("Minimal harus ada satu baris rincian.");
+            }
+        });
+    };
+
+    const addRow = (item = null) => {
+        const newRow = rincianTabelBody.insertRow();
+        newRow.innerHTML = `
+            <td class="px-4 py-2"><input type="text" class="nama-barang mt-1 block w-full rounded-md border-gray-300 shadow-sm" required value="${item ? item.nama : ''}"></td>
+            <td class="px-4 py-2"><input type="number" class="qty mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item ? item.qty : '1'}" min="1" required></td>
+            <td class="px-4 py-2"><input type="text" class="harga-satuan mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="${item ? formatRupiah(item.harga) : '0'}" required></td>
+            <td class="px-4 py-2"><input type="text" class="total-harga bg-gray-100 mt-1 block w-full rounded-md border-gray-300 shadow-sm" value="Rp 0" readonly></td>
+            <td class="px-4 py-2 text-center"><button type="button" class="hapus-baris text-red-600 hover:text-red-800 font-bold p-1 rounded-full text-lg leading-none flex items-center justify-center w-6 h-6">&times;</button></td>`;
+        attachRowListeners(newRow);
+        
+        if(item) {
+             const rowEl = rincianTabelBody.lastElementChild;
+             const qty = parseInt(rowEl.querySelector('.qty').value) || 0;
+             const harga = parseRupiah(rowEl.querySelector('.harga-satuan').value);
+             rowEl.querySelector('.total-harga').value = formatRupiah(qty * harga, 'Rp ');
+        }
+    };
+
+    const getFormData = () => {
+        const items = [];
+        rincianTabelBody.querySelectorAll('tr').forEach(row => {
+            items.push({
+                nama: row.querySelector('.nama-barang').value,
+                qty: parseInt(row.querySelector('.qty').value),
+                harga: parseRupiah(row.querySelector('.harga-satuan').value),
+                total: parseRupiah(row.querySelector('.total-harga').value)
+            });
+        });
+        
+        return {
+            nomor_kuitansi: getEl('nomor_kuitansi').value,
+            tanggal: getEl('tanggal_transaksi').value,
+            kota: getEl('kota_penerbitan').value,
+            diterima_dari: getEl('diterima_dari').value,
+            jenis_pembelanjaan: getEl('jenis_pembelanjaan').value,
+            nominal: parseRupiah(getEl('total_akhir').textContent),
+            terbilang: getEl('terbilang_display').textContent,
+            items: items, // This will be stringified automatically by Supabase client
+            penandatangan_nama: getEl('penandatangan_nama').value,
+            penandatangan_nip: getEl('penandatangan_nip').value,
+            penandatangan_jabatan: getEl('penandatangan_jabatan').value
+        };
+    };
+
+    // --- SUPABASE FUNCTIONS ---
+    const showRekap = async () => {
+        if (!supabaseClient) {
+            alert("Supabase tidak terhubung. Tidak bisa menampilkan rekap.");
+            return;
+        }
+        loadingIndicator.style.display = 'flex';
+        try {
+            let { data: transactions, error } = await supabaseClient
+                .from('transactions')
+                .select('*')
+                .order('tanggal', { ascending: false });
+
+            if (error) throw error;
+            
+            rekapTabelBody.innerHTML = ''; 
+
+            if (!transactions || transactions.length === 0) {
+                rekapTabelBody.innerHTML = '<tr><td colspan="6" class="text-center p-6 text-gray-500">Belum ada data transaksi.</td></tr>';
+            } else {
+                const rowsHtml = transactions.map(tx => `
+                    <tr class="hover:bg-gray-50" id="tx-row-${tx.id}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${tx.tanggal}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tx.nomor_kuitansi}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tx.jenis_pembelanjaan}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">${formatRupiah(tx.nominal, 'Rp ')}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tx.penandatangan_nama}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center space-x-1">
+                            <button data-id="${tx.id}" class="edit-btn bg-yellow-500 text-white px-2 py-1 rounded-md text-xs hover:bg-yellow-600">Edit</button>
+                            <button data-id="${tx.id}" class="hapus-btn bg-red-600 text-white px-2 py-1 rounded-md text-xs hover:bg-red-700">Hapus</button>
+                            <button data-id="${tx.id}" class="pdf-btn bg-blue-600 text-white px-2 py-1 rounded-md text-xs hover:bg-blue-700">PDF</button>
+                        </td>
+                    </tr>
+                `).join('');
+                rekapTabelBody.innerHTML = rowsHtml;
+            }
+        } catch (error) {
+            console.error("Gagal menampilkan rekap:", error);
+            alert(`Gagal menampilkan data rekap: ${error.message}\n\nPastikan Anda sudah menjalankan SQL untuk membuat tabel dan mengatur Policies di Supabase.`);
+        } finally {
+            loadingIndicator.style.display = 'none';
+        }
+    };
+    
+    const downloadRekap = async () => {
+        if (!supabaseClient) {
+            alert('Tidak terhubung ke Supabase. Data tidak dapat diambil.');
+            return;
+        };
+        loadingIndicator.style.display = 'flex';
+        try {
+            let { data: transactions, error } = await supabaseClient.from('transactions').select('*');
+            if (error) throw error;
+
+            if (!transactions || transactions.length === 0) {
+                alert('Tidak ada data transaksi untuk diunduh.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            const headers = Object.keys(transactions[0]).join(',');
+            csvContent += headers + "\r\n";
+
+            transactions.forEach(row => {
+                const values = Object.values(row).map(value => {
+                    let strValue = String(value);
+                    if (typeof value === 'object' && value !== null) {
+                        strValue = JSON.stringify(value).replace(/"/g, '""');
+                    }
+                    if (strValue.includes(',')) {
+                        strValue = `"${strValue}"`;
+                    }
+                    return strValue;
+                }).join(',');
+                csvContent += values + "\r\n";
+            });
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "rekap_transaksi.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+        } catch (error) {
+            console.error("Gagal download rekap:", error);
+            alert(`Gagal mengambil data rekap: ${error.message}`);
+        } finally {
+            loadingIndicator.style.display = 'none';
+        }
+    };
+
+    // --- PDF GENERATION ---
+    const generatePdf = async (data) => {
+        loadingIndicator.style.display = 'flex';
+        const template = getEl('pdf-template');
+        template.style.display = 'block';
+
+        const populate = (id, value) => getEl(id).innerText = value;
+        
+        // Populate PDF template with data
+        populate('pdf-nama-kampus', localStorage.getItem('institusi_nama_kampus') || 'N/A'); 
+        populate('pdf-alamat-kampus', localStorage.getItem('institusi_alamat_kampus') || 'N/A');
+        populate('pdf-telepon-email', 'Telp/Email: ' + (localStorage.getItem('institusi_telepon_email') || 'N/A'));
+        getEl('pdf-logo-dikti').src = localStorage.getItem('institusi_logo_dikti') || getEl('preview_dikti').src;
+        getEl('pdf-logo-kampus').src = localStorage.getItem('institusi_logo_kampus') || getEl('preview_kampus').src;
+        
+        populate('pdf-nomor-kuitansi', 'Nomor: ' + data.nomor_kuitansi);
+        populate('pdf-diterima-dari', data.diterima_dari);
+        populate('pdf-terbilang', data.terbilang);
+        populate('pdf-jenis-pembelanjaan', 'Pembelanjaan ' + data.jenis_pembelanjaan + ' untuk Kegiatan Hibah DIKTI.');
+        
+        let subtotal = data.items.reduce((acc, item) => acc + item.total, 0);
+        
+        let pphValue = 0;
+        if (data.jenis_pembelanjaan === 'Honorarium') {
+            pphValue = subtotal * 0.05;
+        }
+
+        let ppnValue = data.nominal - subtotal + pphValue;
+        
+        populate('pdf-subtotal', formatRupiah(subtotal, 'Rp '));
+        const ppnRow = getEl('pdf-ppn-row');
+        if (ppnValue > 1) {
+            let ppnRate = subtotal > 0 ? Math.round((ppnValue / subtotal) * 100) : 0;
+            populate('pdf-ppn-label', `PPN (${ppnRate}%)`);
+            populate('pdf-ppn-total', formatRupiah(ppnValue, 'Rp '));
+            ppnRow.style.display = 'table-row';
+        } else {
+            ppnRow.style.display = 'none';
+        }
+
+        const pphRow = getEl('pdf-pph-row');
+        if (pphValue > 0) {
+            populate('pdf-pph-total', `(${formatRupiah(pphValue, 'Rp ')})`); // Show as deduction
+            pphRow.style.display = 'table-row';
+        } else {
+            pphRow.style.display = 'none';
+        }
+        
+        populate('pdf-total-akhir', formatRupiah(data.nominal, 'Rp ')); // The nominal from DB is the final total
+        populate('pdf-kota-penerbitan', data.kota);
+        populate('pdf-tanggal-transaksi', new Date(data.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }));
+        populate('pdf-penandatangan-jabatan', data.penandatangan_jabatan);
+        populate('pdf-penandatangan-nama', data.penandatangan_nama);
+        populate('pdf-penandatangan-nip', data.penandatangan_nip);
+        
+        const pdfRincianBody = getEl('pdf-rincian-body');
+        pdfRincianBody.innerHTML = data.items.map(item => `
+            <tr>
+                <td style="border: 1px solid black; padding: 6px;">${item.nama}</td>
+                <td style="border: 1px solid black; padding: 6px; text-align: center;">${item.qty}</td>
+                <td style="border: 1px solid black; padding: 6px; text-align: right;">${formatRupiah(item.harga)}</td>
+                <td style="border: 1px solid black; padding: 6px; text-align: right;">${formatRupiah(item.total, 'Rp ')}</td>
+            </tr>`).join('');
+        
+        try {
+            await new Promise(resolve => setTimeout(resolve, 500)); // wait for images to load
+            const canvas = await html2canvas(template, { scale: 2, useCORS: true });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`kuitansi-${data.nomor_kuitansi}.pdf`);
+        } catch(e) {
+            console.error("PDF Generation Error:", e);
+            alert("Gagal membuat PDF. Coba gunakan gambar logo dengan ukuran lebih kecil atau pastikan info institusi sudah disimpan.");
+        } finally {
+            template.style.display = 'none';
+            loadingIndicator.style.display = 'none';
+        }
+    };
+    
+    // --- EVENT LISTENERS ---
+    tambahBarisBtn.addEventListener('click', () => addRow());
+    ppnCheckbox.addEventListener('change', () => {
+        ppnPersenInput.disabled = !ppnCheckbox.checked;
+        updateTotals();
+    });
+    ppnPersenInput.addEventListener('input', updateTotals);
+    jenisPembelanjaanSelect.addEventListener('change', () => {
+        if (jenisPembelanjaanSelect.value === 'Honorarium') {
+            pphSection.classList.remove('hidden');
+        } else {
+            pphSection.classList.add('hidden');
+        }
+        updateTotals();
+    });
+    downloadRekapBtn.addEventListener('click', downloadRekap);
+    lihatRekapBtn.addEventListener('click', () => {
+        const isCurrentlyOpen = rekapSection.style.maxHeight && rekapSection.style.maxHeight !== '0px';
+        if (isCurrentlyOpen) {
+            rekapSection.style.maxHeight = '0';
+        } else {
+            showRekap().then(() => {
+                rekapSection.style.maxHeight = rekapSection.scrollHeight + "px";
+            });
+        }
+    });
+    simpanInfoInstitusiBtn.addEventListener('click', simpanInfoInstitusi);
+    hapusInfoInstitusiBtn.addEventListener('click', hapusInfoInstitusi);
+    batalEditBtn.addEventListener('click', exitEditMode);
+
+    simpanBtn.addEventListener('click', async () => {
+        if (!supabaseClient) {
+            alert("Supabase tidak terhubung. Tidak bisa menyimpan data.");
+            return;
+        }
+        if (!notaForm.checkValidity()) {
+            notaForm.reportValidity();
+            return;
+        }
+        const data = getFormData();
+        loadingIndicator.style.display = 'flex';
+        try {
+            const { error } = await supabaseClient.from('transactions').insert([data]);
+            if (error) throw error;
+            alert('Data berhasil disimpan!');
+            resetForm();
+            const isCurrentlyOpen = rekapSection.style.maxHeight && rekapSection.style.maxHeight !== '0px';
+            if(isCurrentlyOpen) {
+                showRekap();
+            }
+        } catch (error) {
+            console.error("Gagal menyimpan:", error);
+            alert(`Gagal menyimpan data: ${error.message}`);
+        } finally {
+            loadingIndicator.style.display = 'none';
+        }
+    });
+
+    updateBtn.addEventListener('click', async () => {
+        if (!supabaseClient) {
+            alert("Supabase tidak terhubung. Tidak bisa update data.");
+            return;
+        }
+        if (!notaForm.checkValidity()) {
+            notaForm.reportValidity();
+            return;
+        }
+        const id = editModeIdInput.value;
+        const data = getFormData();
+        loadingIndicator.style.display = 'flex';
+        try {
+            const { error } = await supabaseClient.from('transactions').update(data).eq('id', id);
+            if (error) throw error;
+            alert('Data berhasil diperbarui!');
+            exitEditMode();
+            showRekap(); // Refresh the rekap list
+        } catch (error) {
+            console.error("Gagal update:", error);
+            alert(`Gagal memperbarui data: ${error.message}`);
+        } finally {
+            loadingIndicator.style.display = 'none';
+        }
+    });
+
+    rekapTabelBody.addEventListener('click', async (e) => {
+        if (!supabaseClient) {
+            alert("Supabase tidak terhubung.");
+            return;
+        }
+        const button = e.target.closest('button[data-id]');
+        if (!button) return;
+
+        const id = button.dataset.id;
+        const actionClass = button.classList[0]; // e.g., 'edit-btn', 'hapus-btn'
+
+        try {
+            loadingIndicator.style.display = 'flex';
+            switch (actionClass) {
+                case 'hapus-btn':
+                    if (confirm('Anda yakin ingin menghapus data ini? Aksi ini tidak dapat dibatalkan.')) {
+                        const { error } = await supabaseClient.from('transactions').delete().eq('id', id);
+                        if (error) throw error;
+                        alert('Data berhasil dihapus.');
+                        document.getElementById(`tx-row-${id}`).remove(); // Optimistic UI update
+                    }
+                    break;
+
+                case 'edit-btn': {
+                    let { data, error } = await supabaseClient.from('transactions').select('*').eq('id', id).single();
+                    if (error) throw error;
+
+                    // FIX: Parse items from JSON string to array if necessary
+                    let itemsArray = data.items;
+                    if (typeof itemsArray === 'string') {
+                        try {
+                            itemsArray = JSON.parse(itemsArray);
+                        } catch (err) {
+                            console.error("Gagal mem-parsing 'items' dari JSON:", err);
+                            alert("Data rincian barang rusak dan tidak bisa diedit.");
+                            return; // Exit if parsing fails
+                        }
+                    }
+
+                    // Ensure it's an array before proceeding
+                    if (!Array.isArray(itemsArray)) {
+                        console.error("'items' bukan sebuah array setelah di-parse:", itemsArray);
+                        alert("Format data rincian barang tidak valid.");
+                        return;
+                    }
+
+                    getEl('nomor_kuitansi').value = data.nomor_kuitansi;
+                    getEl('tanggal_transaksi').value = data.tanggal;
+                    getEl('kota_penerbitan').value = data.kota;
+                    getEl('diterima_dari').value = data.diterima_dari;
+                    getEl('jenis_pembelanjaan').value = data.jenis_pembelanjaan;
+                    getEl('penandatangan_nama').value = data.penandatangan_nama;
+                    getEl('penandatangan_nip').value = data.penandatangan_nip;
+                    getEl('penandatangan_jabatan').value = data.penandatangan_jabatan;
+                    
+                    // Show/hide PPH section based on loaded data
+                    if (data.jenis_pembelanjaan === 'Honorarium') {
+                        pphSection.classList.remove('hidden');
+                    } else {
+                        pphSection.classList.add('hidden');
+                    }
+
+                    rincianTabelBody.innerHTML = '';
+                    itemsArray.forEach(item => addRow(item));
+
+                    // Infer PPN state from data
+                    let subtotal = itemsArray.reduce((acc, item) => acc + item.total, 0);
+                    let pphValue = (data.jenis_pembelanjaan === 'Honorarium') ? subtotal * 0.05 : 0;
+                    let ppnValue = data.nominal - subtotal + pphValue;
+
+                    if (ppnValue > 1) {
+                        ppnCheckbox.checked = true;
+                        ppnPersenInput.disabled = false;
+                        let ppnRate = subtotal > 0 ? Math.round((ppnValue / subtotal) * 100) : 11;
+                        ppnPersenInput.value = ppnRate;
+                    } else {
+                        ppnCheckbox.checked = false;
+                        ppnPersenInput.disabled = true;
+                        ppnPersenInput.value = '11'; // reset to default
+                    }
+                    
+                    updateTotals();
+
+                    editModeIdInput.value = id;
+                    enterEditMode();
+                    break;
+                }
+                
+                case 'pdf-btn': {
+                    let { data, error } = await supabaseClient.from('transactions').select('*').eq('id', id).single();
+                    if (error) throw error;
+
+                    // FIX: Parse items for PDF generation as well
+                    if (typeof data.items === 'string') {
+                        try {
+                            data.items = JSON.parse(data.items);
+                        } catch (err) {
+                            console.error("Gagal mem-parsing 'items' untuk PDF:", err);
+                            alert("Data rincian barang untuk PDF rusak.");
+                            return;
+                        }
+                    }
+                     if (!Array.isArray(data.items)) {
+                        data.items = []; // default to empty array if data is malformed
+                    }
+
+                    await generatePdf(data);
+                    break;
+                }
+            }
+        } catch (error) {
+            console.error(`Gagal melakukan aksi '${actionClass}':`, error);
+            alert(`Terjadi kesalahan: ${error.message}`);
+        } finally {
+            loadingIndicator.style.display = 'none';
+        }
+    });
+
+    // Image preview handler
+    const setupLogoPreview = (inputId, previewId) => {
+        getEl(inputId).addEventListener('change', function(event) {
+            if (event.target.files && event.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => getEl(previewId).src = e.target.result;
+                reader.readAsDataURL(event.target.files[0]);
+            }
+        });
+    };
+    setupLogoPreview('logo_dikti', 'preview_dikti');
+    setupLogoPreview('logo_kampus', 'preview_kampus');
+
+    // --- INITIALIZATION ---
+    muatInfoInstitusi();
+    resetForm();
+    console.log("Aplikasi berhasil dimuat. Jika tombol tidak berfungsi, pastikan Anda telah mengatur kredensial Supabase dengan benar.");
+});
+} catch(e) {
+    console.error("Terjadi kesalahan fatal saat inisialisasi:", e);
+    alert("Terjadi kesalahan fatal yang mencegah aplikasi berjalan. Silakan periksa console log (F12) untuk detail.");
+}
+</script>
+
+</body>
+</html>
+
